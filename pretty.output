@@ -1,0 +1,156 @@
+@F3
+Feature: F3 - Address Book # features/address_book.feature:4
+  Save valid addresses, reject incomplete addresses, and protect the default address.
+  Prerequisites that are unavailable must be reported as Blocked before execution.
+  @TC-F3-01 @OP-F3-1 @valid
+  Scenario: TC-F3-01 - Save a complete address                                                 # features/address_book.feature:9
+    Given I am logged in to an authorised test account with an accessible Address Book         # None
+    And the test address is not already present                                                # None
+    When I open My Account Address Book and record the existing addresses and default address  # None
+    And I select New Address                                                                   # None
+    And I enter the following address:                                                         # None
+      | Field          | Value            |
+      | First Name     | Alex             |
+      | Last Name      | Tester           |
+      | Company        |                  |
+      | Address 1      | 15 George Street |
+      | Address 2      |                  |
+      | City           | Sydney           |
+      | Postcode       | 2000             |
+      | Country        | Australia        |
+      | Region / State | New South Wales  |
+      | Default        | No               |
+    And I submit the address using Continue                                                    # None
+    Then a save-success confirmation should appear                                             # None
+    And the address list should contain exactly one new entry matching the entered address     # None
+    When I refresh Address Book and reopen the new address using Edit                          # None
+    Then the saved address fields should match the entered address                             # None
+    And the existing addresses and previously selected default address should remain unchanged # None
+
+  @TC-F3-02 @OP-F3-2 @invalid
+  Scenario: TC-F3-02 - Submit an address without a first name                          # features/address_book.feature:35
+    Given I am logged in to an authorised test account with an accessible Address Book # None
+    When I open Address Book and record the existing addresses and default address     # None
+    And I select New Address                                                           # None
+    And I enter the following address:                                                 # None
+      | Field          | Value            |
+      | First Name     |                  |
+      | Last Name      | Tester           |
+      | Company        |                  |
+      | Address 1      | 15 George Street |
+      | Address 2      |                  |
+      | City           | Sydney           |
+      | Postcode       | 2000             |
+      | Country        | Australia        |
+      | Region / State | New South Wales  |
+      | Default        | No               |
+    And I submit the address using Continue                                            # None
+    Then a visible validation error should identify First Name as invalid or required  # None
+    And no save-success confirmation should appear                                     # None
+    When I return to Address Book and refresh it                                       # None
+    Then the incomplete address should not be saved                                    # None
+    And the existing addresses and default address should remain unchanged             # None
+
+  @TC-F3-03 @OP-F3-3 @edge_case @requires_A1
+  Scenario: TC-F3-03 - Attempt to delete the default address                                      # features/address_book.feature:62
+    Given acceptance assumption A1 that default-address deletion is prohibited has been confirmed # None
+    And I am logged in to a disposable test account with exactly one address that is its default  # None
+    And I have recorded the complete default address and its default designation                  # None
+    When I open Address Book and confirm the recorded address is present                          # None
+    And I select Delete for the default address and confirm if prompted                           # None
+    Then a warning should explain that the default address cannot be deleted                      # None
+    And no deletion-success confirmation should appear                                            # None
+    When I refresh Address Book and reopen the recorded address if available                      # None
+    Then the address should remain present with its original values and default designation       # None
+
+@F7
+Feature: F7 - Product Details # features/product_details.feature:4
+  Display existing products, unavailable products, and products with zero reviews.
+  Prerequisites that are unavailable must be reported as Blocked before execution.
+  @TC-F7-01 @OP-F7-1 @valid
+  Scenario: TC-F7-01 - View an existing product                                                           # features/product_details.feature:9
+    Given the catalogue contains "iPhone" with product ID "40"                                            # None
+    And catalogue or search navigation is available                                                       # None
+    When I locate iPhone through the catalogue or search flow and record its displayed name and price     # None
+    And I select the product to open Product Details                                                      # None
+    Then the details page should identify iPhone and show its image, price, description, and availability # None
+    And its displayed name and price should match the listing in the same currency and customer session   # None
+    When I refresh the product details page                                                               # None
+    Then product ID "40" and its details should remain displayed                                          # None
+    And no product-not-found message should appear                                                        # None
+
+  @TC-F7-02 @OP-F7-2 @invalid
+  Scenario: TC-F7-02 - Request a nonexistent product                                                                  # features/product_details.feature:22
+    Given product ID "999999999" is confirmed absent or replaced with a recorded confirmed absent positive numeric ID # None
+    When I open a known existing product page                                                                         # None
+    And I replace its product_id URL parameter with the confirmed absent ID and load the URL                          # None
+    Then a clear unavailable or not-found state should appear instead of a purchasable product                        # None
+    And no stale name, price, or purchase control should be presented as belonging to the absent ID                   # None
+    And usable navigation back to the store should be available                                                       # None
+    And no raw server error or stack trace should appear                                                              # None
+
+  @TC-F7-03 @OP-F7-3 @edge_case
+  Scenario: TC-F7-03 - View a product with zero reviews                                                          # features/product_details.feature:33
+    Given product ID "40" has zero reviews or another confirmed zero-review product has its name and ID recorded # None
+    When I open the selected product details page                                                                # None
+    And I inspect its review count and rating summary                                                            # None
+    And I open or scroll to its reviews area                                                                     # None
+    Then the product details should remain available with a review count of 0                                    # None
+    And the reviews area should show an empty state or no review entries without fabricated reviews              # None
+    And the rating should use the site empty-state presentation without NaN or division-by-zero errors           # None
+    And the review-entry control should remain available                                                         # None
+
+@F11
+Feature: F11 - Update / Remove Cart # features/update_remove_cart.feature:4
+  Update valid quantities, reject nonnumeric quantities, and remove the last item.
+  Prerequisites that are unavailable must be reported as Blocked before execution.
+  @F11
+  Feature: F11 - Update / Remove Cart  # features/update_remove_cart.feature:4
+
+  @TC-F11-01 @OP-F11-1 @valid
+  Scenario: TC-F11-01 - Update cart quantity                                                                                           # features/update_remove_cart.feature:16
+    Given I have an isolated cart session with one currency, no coupon or voucher, and no selected shipping service                    # None
+    And I have added one unit of an available product with no required options, no quantity discount at 2 units, and stock for 2 units # None
+    And I use iPhone product ID "40" if it meets these fixture conditions                                                              # None
+    And the cart contains exactly one product line with quantity 1                                                                     # None
+    And I have recorded the displayed unit price as U and any tax or fee rows using displayed currency precision                       # None
+    When I open Shopping Cart and record the product, unit price, quantity, and totals                                                 # None
+    And I change the quantity from 1 to 2 and select the line Update control                                                           # None
+    Then the same single product line should show quantity 2 without a duplicate line                                                  # None
+    And the line total should equal 2 times U                                                                                          # None
+    And the subtotal should equal the sum of displayed line totals                                                                     # None
+    And the grand total should reconcile with the subtotal and displayed tax, fee, and discount rows                                   # None
+    When I refresh Shopping Cart                                                                                                       # None
+    Then quantity 2 and the recalculated totals should persist                                                                         # None
+
+  @TC-F11-02 @OP-F11-2 @invalid @requires_A2
+  Scenario: TC-F11-02 - Submit a nonnumeric cart quantity                                                                                        # features/update_remove_cart.feature:30
+    Given I have an isolated cart session with one currency, no coupon or voucher, and no selected shipping service                              # None
+    And I have added one unit of an available product with no required options, no quantity discount at 2 units, and stock for 2 units           # None
+    And I use iPhone product ID "40" if it meets these fixture conditions                                                                        # None
+    And the cart contains exactly one product line with quantity 1                                                                               # None
+    And I have recorded the displayed unit price as U and any tax or fee rows using displayed currency precision                                 # None
+    Given acceptance assumption A2 that invalid quantity is rejected without removing the item or changing its valid quantity has been confirmed # None
+    When I open Shopping Cart and record its original product, quantity, and totals                                                              # None
+    And I attempt to replace quantity 1 with "abc"                                                                                               # None
+    And I select Update if the field accepts the characters or record the visible input restriction                                              # None
+    Then the field should prevent nonnumeric entry or a visible validation response should reject the submitted value                            # None
+    When I refresh Shopping Cart                                                                                                                 # None
+    Then the original product should remain at quantity 1 with its original line total, subtotal, and grand total                                # None
+    And no invalid numeric values or server errors should appear                                                                                 # None
+
+  @TC-F11-03 @OP-F11-3 @edge_case
+  Scenario: TC-F11-03 - Remove the last cart item                                                                                      # features/update_remove_cart.feature:42
+    Given I have an isolated cart session with one currency, no coupon or voucher, and no selected shipping service                    # None
+    And I have added one unit of an available product with no required options, no quantity discount at 2 units, and stock for 2 units # None
+    And I use iPhone product ID "40" if it meets these fixture conditions                                                              # None
+    And the cart contains exactly one product line with quantity 1                                                                     # None
+    And I have recorded the displayed unit price as U and any tax or fee rows using displayed currency precision                       # None
+    When I open Shopping Cart and confirm there is exactly one product line                                                            # None
+    And I select its Remove control and confirm if prompted                                                                            # None
+    Then the removed product line should disappear and an empty-cart message should appear                                             # None
+    And the header cart summary should show zero items and zero cart value in the selected currency                                    # None
+    And no stale product totals should remain                                                                                          # None
+    When I refresh Shopping Cart and reopen the cart summary                                                                           # None
+    Then the empty-cart state and zero header cart summary should persist                                                              # None
+

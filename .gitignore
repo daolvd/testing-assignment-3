@@ -1,0 +1,25 @@
+# Python environments and caches
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Local secrets
+.env
+.env.*
+!.env.example
+
+# Generated evidence and reports
+artifacts/
+reports/
+screenshots/
+*.log
+.coverage
+htmlcov/
+
+# Operating system files
+.DS_Store
