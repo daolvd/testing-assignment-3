@@ -31,7 +31,7 @@ def after_scenario(context, scenario):
         return
 
     try:
-        directory = PROJECT_ROOT / "artifacts" / "screenshots"
+        directory = PROJECT_ROOT / "reports" / "screenshots"
         directory.mkdir(parents=True, exist_ok=True)
         name = re.sub(r"[^A-Za-z0-9_-]+", "_", scenario.name).strip("_")[:80]
         timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
