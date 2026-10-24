@@ -1,5 +1,3 @@
-"""Behave lifecycle hooks; application navigation belongs in future steps."""
-
 import logging
 import re
 from datetime import datetime, timezone
@@ -19,27 +17,29 @@ def before_all(context):
 
 def before_scenario(context, scenario):
     context.browser = create_browser(context.settings)
-    # Behave runs this even if a later step or hook fails.
-    context.add_cleanup(context.browser.quit)
+    context.add_cleanup(lambda: context.browser.quit())
 
 
 def after_scenario(context, scenario):
-    if scenario.status != Status.failed:
+    if scenario.status in (Status.skipped, Status.untested):
         return
     browser = getattr(context, "browser", None)
     if browser is None:
         return
+    capture_screenshot(browser, scenario)
 
+
+def capture_screenshot(browser, scenario):
     try:
         directory = PROJECT_ROOT / "reports" / "screenshots"
         directory.mkdir(parents=True, exist_ok=True)
         name = re.sub(r"[^A-Za-z0-9_-]+", "_", scenario.name).strip("_")[:80]
+        result = scenario.status.name
         timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
-        path = directory / f"{name or 'scenario'}_{timestamp}_{uuid4().hex[:8]}.png"
+        path = directory / f"{name or 'scenario'}_{result}_{timestamp}_{uuid4().hex[:8]}.png"
         if not browser.save_screenshot(str(path)):
-            LOGGER.warning("Browser could not save failure screenshot: %s", path)
+            LOGGER.warning("Browser could not save %s screenshot: %s", result, path)
             return
-        LOGGER.warning("Failure screenshot saved: %s", path)
+        LOGGER.info("Screenshot (%s) saved: %s", result, path)
     except Exception:
-        # Screenshot errors must not replace the original scenario failure.
-        LOGGER.exception("Could not capture failure screenshot")
+        LOGGER.exception("Could not capture screenshot")

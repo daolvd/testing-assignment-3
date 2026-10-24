@@ -1,42 +1,49 @@
-# Source: blackbox-test-cases.md, Feature F7. Schedule: D4.
-# Dependency: F4 -> F6 -> F7. Verify current catalogue data before execution.
-@F7
+# Source: blackbox-test-cases.md, T002 - F7 Product Details. Technique: Output Partitioning.
+@F7 @T002
 Feature: F7 - Product Details
-  Display existing products, unavailable products, and products with zero reviews.
+  A guest reaches a product through Search or the category menu and inspects its details.
   Prerequisites that are unavailable must be reported as Blocked before execution.
 
-  @TC-F7-01 @OP-F7-1 @valid
-  Scenario: TC-F7-01 - View an existing product
-    Given the catalogue contains "iPhone" with product ID "40"
-    And catalogue or search navigation is available
-    When I locate iPhone through the catalogue or search flow and record its displayed name and price
-    And I select the product to open Product Details
-    Then the details page should identify iPhone and show its image, price, description, and availability
-    And its displayed name and price should match the listing in the same currency and customer session
-    When I refresh the product details page
-    Then product ID "40" and its details should remain displayed
-    And no product-not-found message should appear
-    # Cleanup: None.
+  @T002-S1 @OP-F7-01 @valid
+  Scenario: T002-S1 - Find iPhone through Search and inspect its standard product details
+    Given I am a guest on the Home page with US Dollar selected
+    When I search for iPhone
+    Then the search results should contain an iPhone card for product ID 40
+    When I open the product card named iPhone
+    Then the details page should show the heading iPhone for product ID 40
+    And the product details should show:
+      | Detail       | Value    |
+      | Brand        | Apple    |
+      | Availability | In Stock |
+      | Price        | $123.20  |
+      | Ex Tax       | $101.00  |
+    When I open the main product image and close the image viewer
+    Then the enlarged image should load and the viewer should close on the same product
+    And the Description tab should show a non-empty description
+    When I reload the product page
+    Then the product information and image should be unchanged after the reload
 
-  @TC-F7-02 @OP-F7-2 @invalid
-  Scenario: TC-F7-02 - Request a nonexistent product
-    Given product ID "999999999" is confirmed absent or replaced with a recorded confirmed absent positive numeric ID
-    When I open a known existing product page
-    And I replace its product_id URL parameter with the confirmed absent ID and load the URL
-    Then a clear unavailable or not-found state should appear instead of a purchasable product
-    And no stale name, price, or purchase control should be presented as belonging to the absent ID
-    And usable navigation back to the store should be available
-    And no raw server error or stack trace should appear
-    # Cleanup: None.
+  @T002-S2 @OP-F7-02 @edge
+  Scenario: T002-S2 - Browse Laptops and inspect an out-of-stock product
+    Given I am a guest on the Home page with US Dollar selected
+    When I open the Laptops & Notebooks menu and click Show All Laptops & Notebooks
+    Then the category listing should contain a MacBook Air card for product ID 44
+    When I open the product card named MacBook Air
+    Then the details page should show the heading MacBook Air for product ID 44
+    And the product details should show:
+      | Detail       | Value        |
+      | Brand        | Apple        |
+      | Availability | Out Of Stock |
+      | Price        | $1,202.00    |
+    And the main image should be loaded and the Description tab should be readable
+    When I reload the product page
+    Then the product information and image should be unchanged after the reload
 
-  @TC-F7-03 @OP-F7-3 @edge_case
-  Scenario: TC-F7-03 - View a product with zero reviews
-    Given product ID "40" has zero reviews or another confirmed zero-review product has its name and ID recorded
-    When I open the selected product details page
-    And I inspect its review count and rating summary
-    And I open or scroll to its reviews area
-    Then the product details should remain available with a review count of 0
-    And the reviews area should show an empty state or no review entries without fabricated reviews
-    And the rating should use the site empty-state presentation without NaN or division-by-zero errors
-    And the review-entry control should remain available
-    # Cleanup: None; do not submit a review.
+  @T002-S3 @OP-F7-03 @invalid
+  Scenario: T002-S3 - Open a product page for a product ID that does not exist
+    Given I am a guest on the Home page with US Dollar selected
+    When I open the product page for product ID 99999
+    Then the page should state Product not found!
+    And no product details should be shown
+    When I click Continue on the not-found page
+    Then the Home page should open

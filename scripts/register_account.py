@@ -45,7 +45,7 @@ def main() -> int:
 
     driver = create_browser(settings)
     try:
-        page = RegisterPage(driver).open()
+        page = RegisterPage(driver, settings.base_url).open()
         page.register(args.first_name, args.last_name, email, args.telephone, password)
         if not page.wait_for_result():
             print("Registration failed:", *page.error_messages(), sep="\n  ")
