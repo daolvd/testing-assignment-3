@@ -27,14 +27,43 @@ cleanup.
 - Google Chrome. Selenium Manager downloads the matching driver automatically,
   so no manual ChromeDriver install is needed. The first run needs internet access.
 
-## Setup
+## Quick start (Automated execution)
 
-Run from the project root.
+The repository provides automated runner scripts that handle everything from zero to test execution on first run (virtual environment, dependencies, `.env`, test account creation, and test execution).
+
+### macOS / Linux / Git Bash
+
+```sh
+./run.sh
+```
+
+### Windows (Command Prompt / Double-click)
+
+```cmd
+run.bat
+```
+
+> [!NOTE]
+> On the first execution, `run.sh` and `run.bat` automatically:
+> 1. Detect Python 3.11+.
+> 2. Create and activate `.venv`.
+> 3. Install required packages from `requirements.txt`.
+> 4. Create `.env` from `.env.example` if it does not exist.
+> 5. Automatically provision and save a test account to `.env` if credentials are not configured.
+> 6. Launch the Behave test suite.
+>
+> If you only want to set up the environment without running tests, run `./setup.sh` (macOS/Linux) or `setup.bat` (Windows).
+
+## Manual setup (Alternative)
+
+If you prefer to configure the environment manually:
 
 ```sh
 python3.12 -m venv .venv
-source .venv/bin/activate
+source .venv/bin/activate        # On Windows: .venv\Scripts\activate
 python -m pip install -r requirements.txt
+cp .env.example .env             # On Windows: copy .env.example .env
+python -m scripts.register_account --save-env
 ```
 
 ## Configuration
@@ -56,7 +85,7 @@ scenarios log in with it. If either value is empty, those scenarios are skipped
 (Blocked) instead of run. If you have no account, create one with the command
 below.
 
-### Creating a test account
+### Creating a test account manually
 
 To register a new account on the site and write its credentials to `.env`:
 
@@ -68,7 +97,41 @@ Without `--save-env` the account is created but a generated password is not
 kept. Optional arguments: `--first-name`, `--last-name`, `--telephone`. If
 `TEST_EMAIL` / `TEST_PASSWORD` are already set, they are used for the new account.
 
-## Running the tests
+## Running tests
+
+You can pass any arguments to `run.sh` / `run.bat` (or `python -m behave`).
+
+### Running independent test cases
+
+| Filter target | macOS / Linux / Git Bash | Windows (CMD) |
+| --- | --- | --- |
+| **All features** | `./run.sh` | `run.bat` |
+| **By scenario tag** | `./run.sh --tags=@T001-S1` | `run.bat --tags=@T001-S1` |
+| **By scenario name** | `./run.sh -n "T002-S1"` | `run.bat -n "T002-S1"` |
+| **By feature file** | `./run.sh features/product_details.feature` | `run.bat features\product_details.feature` |
+| **By exact line** | `./run.sh features/address_book.feature:8` | `run.bat features\address_book.feature:8` |
+| **By class tag** | `./run.sh --tags=@valid` | `run.bat --tags=@valid` |
+| **Dry run (syntax only)** | `./run.sh --dry-run --no-snippets` | `run.bat --dry-run --no-snippets` |
+| **Headless mode** | `HEADLESS=true ./run.sh` | Set `HEADLESS=true` in `.env`, run `run.bat` |
+
+### Available test case IDs
+
+* **F3 Address Book**:
+  * `@T001-S1`: Valid address saved and verified after new login.
+  * `@T001-S2`: Reject address with empty First Name.
+  * `@T001-S3`: Reject address with empty City.
+* **F7 Product Details**:
+  * `@T002-S1`: Search and inspect iPhone product details.
+  * `@T002-S2`: Browse out-of-stock product details.
+  * `@T002-S3`: Handle non-existent product ID.
+* **F11 User Account (Edit Profile)**:
+  * `@T003-S1`: Save valid profile update and verify persistence.
+  * `@T003-S2`: Reject update with empty Last Name.
+  * `@T003-S3`: Browser HTML5 validation blocks malformed email.
+
+### Manual Behave commands
+
+If your virtual environment is already activated (`source .venv/bin/activate`):
 
 ```sh
 python -m behave                                  # all features
@@ -84,8 +147,8 @@ A dry run does not start Chrome or touch the site, so it only proves that the
 feature files and step definitions match, not that the tests pass.
 
 Each scenario starts a fresh Chrome session. After every executed scenario a
-screenshot is saved with the scenario name and its result in the file name.
-Screenshots can contain account data, so review them before sharing.
+screenshot is saved with the scenario name and its result in the file name under
+`reports/screenshots/`. Screenshots can contain account data, so review them before sharing.
 
 ## Project structure
 
@@ -118,6 +181,10 @@ Screenshots can contain account data, so review them before sharing.
 │   ├── browser_factory.py         # Chrome construction
 │   └── session.py                 # login, ensure_logged_in, restart_browser
 ├── scripts/register_account.py    # creates a fresh test account
+├── run.sh                         # All-in-one runner for macOS / Linux / Git Bash
+├── run.bat                        # All-in-one runner for Windows (CMD / double-click)
+├── setup.sh                       # Dedicated setup script for macOS / Linux
+├── setup.bat                      # Dedicated setup script for Windows
 ├── behave.ini
 ├── requirements.txt
 ├── .env.example
